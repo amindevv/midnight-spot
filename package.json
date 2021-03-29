@@ -12,13 +12,19 @@
     "@types/node": "^12.0.0",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.0",
+    "d3-dsv": "^2.0.0",
+    "d3-scale": "^3.2.3",
+    "d3-selection": "^2.0.0",
+    "d3-time": "^2.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",
+    "react-stockcharts": "^0.7.8",
     "typescript": "^4.1.2",
     "web-vitals": "^1.0.1"
   },
+  "proxy": "http://localhost:6423",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -44,6 +50,8 @@
     ]
   },
   "devDependencies": {
+    "@types/d3-dsv": "^2.0.1",
+    "@types/d3-time": "^2.0.0",
     "@types/react-router-dom": "^5.1.7"
   }
 }
