@@ -111,12 +111,12 @@ const ChartComponent = ({ location: { search } }: Params) => {
   const chartOrigin = height - indicatorHeight
 
   return (
-    <Box>
-      <ChartCanvas height={height}
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <ChartCanvas height={height - 120}
         ratio={1}
-        width={width}
+        width={width - 256}
         type={'svg'}
-        margin={{ left: 50, right: 100, top: 10, bottom: 40 }}
+        margin={{ left: 10, right: 100, top: 10, bottom: 20 }}
         seriesName="EURUSD"
         data={scaleData}
         xScale={xScale}
@@ -127,7 +127,7 @@ const ChartComponent = ({ location: { search } }: Params) => {
         <Chart id={1}
           yExtents={d => ([d.high, d.low])}
           origin={(w, h) => [0, 0]}
-          height={height - indicatorHeight - 40 - 10 - 50}
+          height={height - indicatorHeight - 120}
         >
           <YAxis axisAt="right" orient="right" ticks={12} />
 
@@ -152,7 +152,7 @@ const ChartComponent = ({ location: { search } }: Params) => {
                 type: "ATR",
                 stroke: atr14.stroke(),
                 windowSize: atr14.options().windowSize,
-                
+
               },
             ]}
           />
