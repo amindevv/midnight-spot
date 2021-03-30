@@ -11,7 +11,6 @@ const App = () => {
     <div>
       <AppBar title='shatter' />
       <div>
-
         <Router>
           <Switch>
             <Route exact path='/complex' component={Chart} />
