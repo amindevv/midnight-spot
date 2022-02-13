@@ -6,7 +6,7 @@ const routes = [
     path: '/dashboard',
     element: <Dashboard />,
     children: [
-      { path: '/chart', element: <Chart {...{ location: { search: '?pair=EUR/USD&time=30min' } }} /> }
+      { path: '/chart', element: <Chart {...{ location: { search: '?pair=EUR/USD&time=15min' } }} /> }
     ]
   }
 ];

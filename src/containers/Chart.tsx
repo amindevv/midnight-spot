@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Button from '@material-ui/core/Button';
 import { ChartCanvas, Chart } from "react-stockcharts";
-import { CandlestickSeries, LineSeries } from "react-stockcharts/lib/series";
+import { CandlestickSeries, LineSeries, BarSeries } from "react-stockcharts/lib/series";
 import { OHLCTooltip, MovingAverageTooltip } from "react-stockcharts/lib/tooltip";
 import { discontinuousTimeScaleProvider } from "react-stockcharts/lib/scale";
 import { XAxis, YAxis } from "react-stockcharts/lib/axes";
@@ -24,6 +24,7 @@ import { theme } from '../styles/theme';
 import { objectToQuery, queryToObject } from '../utils/query-parser';
 import { ChartQuery, Timeseries } from '../types/Chart';
 import { now } from '../utils/date-format'
+import { ChartTooltip, EdgeIndicatorComponent, Loading } from './ChartComponents';
 
 interface Params {
   location: {
@@ -42,10 +43,9 @@ const ChartComponent = ({ location: { search } }: Params) => {
     const body = {
       symbols: [pair],
       intervals: [time],
-      start_date: '2021-03-28',
+      start_date: '2021-03-27',
       end_date: now(),
       order: 'ASC',
-      outputsize: 100,
       timezone: 'Europe/Rome',
       methods: [
         'time_series', {
@@ -57,9 +57,15 @@ const ChartComponent = ({ location: { search } }: Params) => {
           name: 'ichimoku',
           symbol: [pair],
           interval: [time],
-
           start_date: '2021-03-28',
           end_date: now(),
+        }, {
+          name: 'macd',
+          symbol: [pair],
+          order: "ASC",
+          interval: [time],
+          fast_period: 20,
+          slow_period: 40
         }
       ]
     }
@@ -78,21 +84,7 @@ const ChartComponent = ({ location: { search } }: Params) => {
       .then(res => res.json())
       .then(resJson => {
         console.log(resJson)
-        if (resJson.data && resJson.data[0].values) {
-          const atrData = resJson.data[1].values
-          const ichiData = resJson.data[2].values
-          const resData = resJson.data[0].values.map((row, index) => ({
-            date: new Date(row.datetime),
-            high: parseFloat(row.high),
-            low: parseFloat(row.low),
-            open: parseFloat(row.open),
-            close: parseFloat(row.close),
-            atr: parseFloat(atrData[index].atr),
-            ichi: parseFloat(ichiData[index].senkou_span_a)
-          }))
-
-          setData(resData)
-        } else console.log(resJson)
+        setData(resJson)
       })
     // }, 30000)
 
@@ -103,29 +95,9 @@ const ChartComponent = ({ location: { search } }: Params) => {
   }, [])
 
   if (data.length === 0)
-    return (
-      <Box sx={{
-        backgroundColor: '#141822',
-        display: 'flex',
-        height: '100%',
-        alignItems: 'center'
-      }}>
-        <Lottie options={{
-          loop: true,
-          autoplay: true,
-          animationData: animationData,
-          rendererSettings: {
-            preserveAspectRatio: 'xMidYMid slice'
-          }
-        }}
-          isPaused={false}
-          isStopped={false}
-          height={60}
-          width={60} />
-      </Box>
-    )
+    return <Loading />
 
-  const xScaleProvider = discontinuousTimeScaleProvider.inputDateAccessor(d => d.date);
+  const xScaleProvider = discontinuousTimeScaleProvider.inputDateAccessor(d => new Date(d.date));
   const { data: scaleData, xScale, xAccessor, displayXAccessor } = xScaleProvider(data);
   const start = xAccessor(last(scaleData));
   const end = xAccessor(scaleData[Math.max(0, data.length - 50)]);
@@ -152,7 +124,7 @@ const ChartComponent = ({ location: { search } }: Params) => {
   const indicatorHeight = 150
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#141822' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#141822', height: '100%' }}>
       <ChartCanvas height={height - 70}
         ratio={1}
         width={width - 256}
@@ -168,18 +140,11 @@ const ChartComponent = ({ location: { search } }: Params) => {
         <Chart id={1}
           yExtents={d => ([d.high, d.low])}
           origin={(w, h) => [0, 0]}
-          height={height - indicatorHeight - 120}
+          height={height - indicatorHeight * 2 - 120}
         >
           <YAxis axisAt="right" orient="right" ticks={12} stroke="#fdbf00" tickStroke="#fdbf00" />
 
-          <EdgeIndicator
-            itemType="last"
-            at="right"
-            edgeAt="right"
-            orient="left"
-            dx={50}
-            yAccessor={d => d.close}
-            displayFormat={format(".5f")} fill={fill} />
+          <EdgeIndicatorComponent />
 
           <MouseCoordinateY
             at="right"
@@ -188,63 +153,19 @@ const ChartComponent = ({ location: { search } }: Params) => {
             dx={50}
             displayFormat={format(".5f")} />
 
-          <OHLCTooltip
-            forChart={1}
-            origin={[0, 0]}
-            ohlcFormat={format(".5f")}
-            fontSize={16}
-            displayTexts={{ o: 'O', c: 'C', l: 'L', h: 'H' }}
-            textFill='white'
-            labelFill='#fdbf00'
-          />
           <CandlestickSeries {...candlesAppearance} />
+
+          <ChartTooltip atr={atr14} />
 
           <LineSeries
             yAccessor={(d) => d.ichi}
             stroke={'white'} />
 
-          <MovingAverageTooltip
-            onClick={e => console.log(e)}
-            origin={[0, 15]}
-            displayFormat={format('.5f')}
-            valueFill='white'
-            fontSize={12}
-            textFill='white'
-            color='white'
-            labelFill='#fdbf00'
-            options={[
-              {
-                yAccessor: (d) => d.ichi,
-                type: 'ICHI',
-                stroke: '#fdbf00',
-                windowSize: '26',
-              },
-            ]}
-          />
-
-          <MovingAverageTooltip
-            onClick={e => console.log(e)}
-            origin={[60, 15]}
-            displayFormat={format('.5f')}
-            fontSize={12}
-            textFill={atr14.stroke()}
-            labelFill='#fdbf00'
-            options={[
-              {
-                yAccessor: atr14.accessor(),
-                type: "ATR",
-                stroke: '#fdbf00',
-                windowSize: atr14.options().windowSize,
-              },
-            ]}
-          />
-
         </Chart>
 
         <Chart id={2}
           yExtents={atr14.accessor()}
-          height={indicatorHeight} origin={(w, h) => [0, h - indicatorHeight]} padding={{ top: 10, bottom: 10 }}>
-          <XAxis axisAt="bottom" orient="bottom" stroke="#fdbf00" tickStroke="#fdbf00" />
+          height={indicatorHeight} origin={(w, h) => [0, h - indicatorHeight * 2 - indicatorHeight / 2]} padding={{ top: 10, bottom: 10 }}>
           <YAxis axisAt="right" orient="right" ticks={2} stroke="#fdbf00" tickStroke="#fdbf00" />
 
           <LineSeries
@@ -266,6 +187,33 @@ const ChartComponent = ({ location: { search } }: Params) => {
             rectWidth={110}
             fill='#4C525E'
             displayFormat={timeFormat("%m-%d-%I:%M %p")} />
+        </Chart>
+        <Chart id={3}
+          yExtents={(d) => ([d.trendDown > d.trendUp ? d.trendDown : d.trendUp, 0])}
+          height={indicatorHeight + indicatorHeight / 2} origin={(w, h) => [0, h - indicatorHeight - indicatorHeight / 2]} padding={{ top: 10, bottom: 10 }}>
+          <XAxis axisAt="bottom" orient="bottom" stroke="#fdbf00" tickStroke="#fdbf00" />
+          <YAxis axisAt="right" orient="right" ticks={5} stroke="#fdbf00" tickStroke="#fdbf00" />
+
+          <BarSeries
+            yAccessor={d => d.trendDown}
+            fill='rgba(239, 84, 81, 1)'
+            stroke={false}
+          />
+
+          <BarSeries
+            fill='rgba(53, 167, 154, 1)'
+            border='rgba(53, 167, 154, 1)'
+            yAccessor={d => d.trendUp}
+            stroke={false}
+          />
+
+          <EdgeIndicator
+            itemType="last"
+            at="right"
+            edgeAt="right"
+            orient="left"
+            dx={50}
+            yAccessor={d => d.trendDown} displayFormat={format(".5f")} fill={fill} />
         </Chart>
         <CrossHairCursor />
       </ChartCanvas>
